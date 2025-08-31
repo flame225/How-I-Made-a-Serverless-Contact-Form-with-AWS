@@ -1,0 +1,38 @@
+const AWS = require("aws-sdk");
+const ses = new AWS.SES();
+
+exports.handler = async (event) => {
+  try {
+    // Parse request body
+    const body = JSON.parse(event.body);
+
+    // Email params
+    const params = {
+      Destination: { ToAddresses: ["myemail@example.com"] }, // 👈 Your inbox
+      Message: {
+        Body: {
+          Text: {
+            Data: `New Contact Form Submission\n\nName: ${body.name}\nEmail: ${body.email}\nMessage: ${body.message}`,
+          },
+        },
+        Subject: { Data: "New Contact Form Submission" },
+      },
+      Source: "no-reply@yourdomain.com", // 👈 Must be verified in SES
+    };
+
+    // Send email
+    await ses.sendEmail(params).promise();
+
+    return {
+      statusCode: 200,
+      headers: { "Access-Control-Allow-Origin": "*" }, // CORS
+      body: JSON.stringify({ message: "Email sent successfully!" }),
+    };
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Failed to send email" }),
+    };
+  }
+};
